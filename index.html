@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>自洽计划-玛尼堆</title>
+    <style>
+        body {
+            background: #F5A3C7;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* 花瓣样式保持不变 */
+        .petal { /* 原有花瓣样式 */ }
+
+        /* 玛尼堆容器 */
+        #mani-stone {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -120%);
+            z-index: 1;
+            width: 600px;
+            height: 400px;
+        }
+
+        .stone {
+            position: absolute;
+            width: 60px;
+            height: 40px;
+            clip-path: polygon(
+                0 25%, 10% 0, 30% 10%, 45% 0,
+                65% 15%, 85% 5%, 100% 25%,
+                90% 60%, 70% 100%, 30% 90%, 0 70%
+            );
+            border-radius: 8px;
+            box-shadow: 3px 3px 8px rgba(0,0,0,0.2);
+            transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        /* 新增发送按钮样式 */
+        .input-group {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        #send-btn {
+            width: 80px;
+            padding: 15px;
+            background: #95C480;
+            border: none;
+            border-radius: 25px;
+            color: white;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        #send-btn:hover {
+            background: #7DAF6D;
+        }
+    </style>
+</head>
+<body>
+    <div id="mani-stone"></div>
+
+    <div class="voice-ui">
+        <button id="mic-btn">🎤</button>
+        <h3 style="color:#636363;">自我祝颂</h3>
+        <div class="input-group">
+            <input type="text" id="text-input" placeholder="说出或写下您的祝福...">
+            <button id="send-btn">发送</button>
+        </div>
+    </div>
+
+    <script>
+        // 物理参数配置
+        const MAX_LAYERS = 5;
+        const STONES_PER_LAYER = [10, 8, 6, 4, 2];
+        let currentLayer = 0;
+        let stonesInLayer = 0;
+        let lastColorIndex = -1;
+
+        // 扩展颜色库
+        const STONE_COLORS = [
+            '#A9A9A9', '#6D4C41', '#BCAAA4', 
+            '#8D6E63', '#795548', '#A1887F',
+            '#907B6E', '#6E5C54', '#857F7A'
+        ];
+
+        // 生成不重复颜色
+        function getRandomColor() {
+            let newIndex;
+            do {
+                newIndex = Math.floor(Math.random() * STONE_COLORS.length);
+            } while (newIndex === lastColorIndex);
+            lastColorIndex = newIndex;
+            return STONE_COLORS[newIndex];
+        }
+
+        // 石块物理运动
+        function animateFall(stone) {
+            const startX = parseInt(stone.style.left);
+            const startY = parseInt(stone.style.top);
+            const angle = Math.random() * 60 - 30;
+            const distance = 300 + Math.random() * 200;
+            
+            stone.style.transition = 'all 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+            stone.style.transform = `
+                rotate(${angle}deg)
+                translate(${distance * Math.sign(angle)}px, 200px)
+                scale(0.7)
+            `;
+            
+            setTimeout(() => {
+                stone.style.opacity = '0';
+                setTimeout(() => stone.remove(), 1200);
+            }, 100);
+        }
+
+        // 生成石块
+        function addStone(text) {
+            if (!text) return;
+
+            // 检查当前层容量
+            if (stonesInLayer >= STONES_PER_LAYER[currentLayer]) {
+                animateFall(createStoneElement(text, true));
+                return;
+            }
+
+            const stone = createStoneElement(text);
+            positionStone(stone);
+            document.getElementById('mani-stone').appendChild(stone);
+
+            stonesInLayer++;
+            if (stonesInLayer >= STONES_PER_LAYER[currentLayer]) {
+                currentLayer = Math.min(currentLayer + 1, MAX_LAYERS - 1);
+                stonesInLayer = 0;
+            }
+        }
+
+        function createStoneElement(text, isFalling = false) {
+            const stone = document.createElement('div');
+            stone.className = 'stone';
+            stone.style.background = getRandomColor();
+            
+            // 文字处理
+            const stoneText = document.createElement('div');
+            stoneText.className = 'stone-text';
+            // ...（原有文字处理逻辑）
+
+            if (isFalling) {
+                stone.style.position = 'fixed';
+                stone.style.left = `${50 + (Math.random() - 0.5) * 100}%`;
+                stone.style.top = '20%';
+            }
+
+            return stone;
+        }
+
+        // 精确计算石块位置
+        function positionStone(stone) {
+            const layerWidth = STONES_PER_LAYER[currentLayer] * 60;
+            const xOffset = (600 - layerWidth) / 2 + stonesInLayer * 60;
+            const yOffset = currentLayer * 40;
+
+            stone.style.left = `${xOffset}px`;
+            stone.style.top = `${yOffset}px`;
+            stone.style.transform = `
+                rotate(${Math.random() * 15 - 7.5}deg)
+                scale(${0.9 + Math.random() * 0.2})
+            `;
+        }
+
+        // 事件监听更新
+        document.getElementById('send-btn').addEventListener('click', () => {
+            const input = document.getElementById('text-input');
+            if (input.value) {
+                addStone(input.value);
+                input.value = '';
+            }
+        });
+
+        // 其他原有逻辑...
+    </script>
+</body>
+</html>
